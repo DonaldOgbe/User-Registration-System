@@ -1,10 +1,8 @@
 package com.deodev.User_Registration_System.model;
 
-import org.springframework.stereotype.Component;
-
 import java.util.Objects;
 
-@Component
+
 public class User {
     private String name;
     private String email;

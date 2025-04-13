@@ -19,7 +19,7 @@ public class UserService {
     public String registerUser(User user) {
         database.addUser(user);
         emailService.sendWelcomeEmail(user);
-        return String.format("%s has been registered !", user.getName());
+        return String.format("%s has been registered !%n", user.getName());
     }
 
 }
