@@ -15,15 +15,5 @@ public class UserRepository {
         return database.containsKey(user.getId());
     }
 
-    public void addUser(User user) {
-        database.put(user.getId(), user);
-    }
 
-    public User findUserById(long id) {
-        return database.get(id);
-    }
-
-    public ArrayList<User> findAllUsers() {
-        return new ArrayList<>(database.values());
-    }
 }
