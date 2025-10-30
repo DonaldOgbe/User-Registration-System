@@ -7,19 +7,5 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
-    private final UserRepository database;
-    private final EmailService emailService;
-
-    @Autowired
-    public UserService(UserRepository database, EmailService emailService) {
-        this.database = database;
-        this.emailService = emailService;
-    }
-
-    public String registerUser(User user) {
-        database.addUser(user);
-        emailService.sendWelcomeEmail(user);
-        return String.format("%s has been registered !%n", user.getName());
-    }
 
 }
