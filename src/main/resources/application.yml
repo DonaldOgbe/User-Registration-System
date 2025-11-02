@@ -1,7 +1,0 @@
-spring:
-
-jwt:
-  secret: ${JWT_SECRET}
-  expiration:
-    hours: ${JWT_EXPIRATION_ACCESS_TOKEN}
-    days: ${JWT_EXPIRATION_REFRESH_TOKEN}

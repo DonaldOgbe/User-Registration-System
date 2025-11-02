@@ -1,54 +1,46 @@
 package com.deodev.User_Registration_System.model;
 
-import com.deodev.User_Registration_System.model.enums.UserStatus;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Entity
-@Table(name = "users")
 public class User {
-
-    @Id
-    @GeneratedValue
-    @Column(name = "id")
-    private UUID id;
-
-    @Column(name = "first_name")
-    private String firstname;
-
-    @Column(name = "last_name")
-    private String lastname;
-
-    @Column(name = "email", unique = true, nullable = false)
+    private String name;
     private String email;
+    private long id;
+    private static long idCount = 1;
 
-    @Column(name = "password", nullable = false)
-    private String password;
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+        id = hashCode();
+    }
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private UserStatus status;
+    public String getName() {
+        return name;
+    }
 
-    @Column(name = "password_updated_at")
-    private LocalDateTime passwordUpdatedAt;
+    public String getEmail() {
+        return email;
+    }
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles = new HashSet<>();
+    public long getId() {
+        return id;
+    }
+
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, email);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        User user = (User) obj;
+        return name.equals(user.name) && email.equals(user.email) && id == ((User) obj).getId();
+    }
+
+
 }

@@ -1,13 +1,19 @@
 package com.deodev.User_Registration_System.repository;
 
 import com.deodev.User_Registration_System.model.User;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
-    Optional<User> findByEmail(String email);
+public class UserRepository {
+    private final Map<Long, User> database = new HashMap<>();
+
+    public boolean containsUser(User user) {
+        return database.containsKey(user.getId());
+    }
+
+
 }
