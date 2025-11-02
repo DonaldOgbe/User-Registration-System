@@ -32,27 +32,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
-    private String secret;
-
-    @Value("{jwt.expiration.hours}")
-    private int accessTokenExpiration;
-
-    @Value("{jwt.expiration.days}")
-    private int refreshTokenExpiration;
+    private final JwtSecretUtil jwtSecretUtil;
 
     public String generateAccessToken(String subject, Map<String, Object> extraClaims) {
-        Date expiration = Date.from(Instant.now().plus(accessTokenExpiration, ChronoUnit.HOURS));
+        Date expiration = Date.from(Instant.now().plus(jwtSecretUtil.getExpiration().getAccess(), ChronoUnit.HOURS));
         return createToken(extraClaims, subject, expiration);
     }
 
     public String generateAccessToken(String subject) {
-        Date expiration = Date.from(Instant.now().plus(accessTokenExpiration, ChronoUnit.HOURS));
+        Date expiration = Date.from(Instant.now().plus(jwtSecretUtil.getExpiration().getAccess(), ChronoUnit.HOURS));
         return createToken(subject, expiration);
     }
 
     public String generateRefreshToken(String subject) {
-        Date expiration = Date.from(Instant.now().plus(refreshTokenExpiration, ChronoUnit.DAYS));
+        Date expiration = Date.from(Instant.now().plus(jwtSecretUtil.getExpiration().getRefresh(), ChronoUnit.DAYS));
         return createToken(subject, expiration);
     }
 
@@ -140,6 +133,6 @@ public class JwtUtil {
     }
 
     Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(jwtSecretUtil.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 }
