@@ -1,11 +1,15 @@
 package com.deodev.User_Registration_System.service;
 
+import com.deodev.User_Registration_System.commons.AppConstants;
 import com.deodev.User_Registration_System.config.CustomUserDetails;
 import com.deodev.User_Registration_System.dto.request.LoginRequest;
+import com.deodev.User_Registration_System.dto.request.RefreshTokenRequest;
 import com.deodev.User_Registration_System.dto.request.RegisterRequest;
 import com.deodev.User_Registration_System.dto.response.ApiResponse;
 import com.deodev.User_Registration_System.dto.response.AuthResponse;
 import com.deodev.User_Registration_System.exception.TokenValidationException;
+import com.deodev.User_Registration_System.exception.ResourceNotFoundException;
+import com.deodev.User_Registration_System.exception.VerificationTokenException;
 import com.deodev.User_Registration_System.model.Role;
 import com.deodev.User_Registration_System.model.User;
 import com.deodev.User_Registration_System.repository.RoleRepository;
@@ -31,9 +35,17 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     public ApiResponse<?> register(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.email()).isPresent()) {
+            throw new IllegalArgumentException(AppConstants.EMAIL_ALREADY_EXISTS);
+        }
         User user = userService.createNewUser(registerRequest);
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ROLE_NOT_FOUND));
+        user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
+        userRepository.save(user);
         verificationService.createVerificationToken(user);
 
         List<String> authorities = getAuthoritiesFromRoles(user);
@@ -45,7 +57,7 @@ public class AuthService {
         String newAccessToken = jwtUtil.generateAccessToken(user.getEmail(), claims);
         String newRefreshToken = jwtUtil.generateRefreshToken(user.getEmail());
 
-        return ApiResponse.success("User registered Successfully",
+        return ApiResponse.success(AppConstants.USER_REGISTRATION_SUCCESS,
                 AuthResponse.builder()
                         .accessToken(newAccessToken).refreshToken(newRefreshToken).build());
     }
@@ -69,14 +81,14 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken);
     }
 
-    public AuthResponse refreshToken(String refreshToken) {
-        if (!jwtUtil.validateToken(refreshToken)) {
-            throw new TokenValidationException("Invalid refresh token");
+    public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+        if (!jwtUtil.validateToken(refreshTokenRequest.refreshToken())) {
+            throw new VerificationTokenException(AppConstants.REFRESH_TOKEN_INVALID);
         }
 
-        String userEmail = jwtUtil.getUsernameFromToken(refreshToken);
+        String userEmail = jwtUtil.getUsernameFromToken(refreshTokenRequest.refreshToken());
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
         List<String> authorities = getAuthoritiesFromRoles(user);
 
 
