@@ -1,0 +1,38 @@
+package com.deodev.User_Registration_System.controller;
+
+import com.deodev.User_Registration_System.dto.request.LoginRequest;
+import com.deodev.User_Registration_System.dto.request.RefreshTokenRequest;
+import com.deodev.User_Registration_System.dto.request.RegisterRequest;
+import com.deodev.User_Registration_System.dto.response.ApiResponse;
+import com.deodev.User_Registration_System.dto.response.AuthResponse;
+import com.deodev.User_Registration_System.service.AuthService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<?>> register(@RequestBody RegisterRequest registerRequest) {
+        ApiResponse<?> response = authService.register(registerRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest loginRequest) {
+        AuthResponse authResponse = authService.login(loginRequest);
+        return new ResponseEntity<>(ApiResponse.success("Login successful", authResponse), HttpStatus.OK);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        AuthResponse authResponse = authService.refreshToken(refreshTokenRequest);
+        return new ResponseEntity<>(ApiResponse.success("Token refreshed successfully", authResponse), HttpStatus.OK);
+    }
+}

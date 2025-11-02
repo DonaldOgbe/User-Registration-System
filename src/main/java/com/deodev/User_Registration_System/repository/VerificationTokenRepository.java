@@ -1,6 +1,6 @@
 package com.deodev.User_Registration_System.repository;
 
-import com.deodev.User_Registration_System.model.User;
+import com.deodev.User_Registration_System.model.VerificationToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,6 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
-    Optional<User> findByEmail(String email);
+public interface VerificationTokenRepository extends JpaRepository<VerificationToken, UUID> {
+    Optional<VerificationToken> findByToken(String token);
 }

@@ -6,7 +6,5 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
-    public void sendWelcomeEmail(User user){
-        System.out.printf("Welcome %s !! We are Happy to have you.%n", user.getName());
-    }
+
 }
