@@ -5,3 +5,8 @@ jwt:
   expiration:
     access: ${JWT_EXPIRATION_ACCESS_TOKEN}
     refresh: ${JWT_EXPIRATION_REFRESH_TOKEN}
+
+email:
+  from: ${APP_DOMAIN_EMAIL_ADDRESS}
+  provider: ${EMAIL_PROVIDER}
+  api-key: ${EMAIL_PROVIDER_TOKEN}
