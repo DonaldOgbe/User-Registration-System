@@ -18,4 +18,19 @@ public class TemplateService {
         context.setVariables(variables);
         return templateEngine.process(template, context);
     }
+
+    String buildVerificationEmailContent(String userName, String activationLink) {
+        Map<String, Object> variables = Map.of(
+                "userName", userName,
+                "activationLink", activationLink
+        );
+        return buildEmail("verification", variables);
+    }
+
+    String buildWelcomeEmailContent(String userName) {
+        Map<String, Object> variables = Map.of(
+                "userName", userName
+        );
+        return buildEmail("welcome", variables);
+    }
 }

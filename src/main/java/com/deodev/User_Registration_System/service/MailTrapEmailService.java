@@ -6,6 +6,7 @@ import io.mailtrap.factory.MailtrapClientFactory;
 import io.mailtrap.model.request.emails.Address;
 import io.mailtrap.model.request.emails.MailtrapMail;
 import io.mailtrap.model.response.emails.SendResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,10 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MailTrapEmailService implements EmailService{
+
+    private final TemplateService templateService;
 
     @Value("${email.from}")
     private String appDomain;
@@ -44,5 +48,31 @@ public class MailTrapEmailService implements EmailService{
         } catch (Exception ex) {
             log.error("Unexpected error while sending email to {}", mail.getTo(), ex);
         }
+    }
+
+    @Override
+    public void sendVerificationEmail(String to, String userName, String activationLink) {
+        String subject = "Account Verification";
+        String templateContent = templateService.buildVerificationEmailContent(userName, activationLink);
+        EmailContent emailContent = EmailContent.builder()
+                .recipientAddress(to)
+                .recipientName(userName)
+                .subject(subject)
+                .template(templateContent)
+                .build();
+        sendMail(emailContent);
+    }
+
+    @Override
+    public void sendWelcomeEmail(String to, String userName) {
+        String subject = "Welcome!";
+        String templateContent = templateService.buildWelcomeEmailContent(userName);
+        EmailContent emailContent = EmailContent.builder()
+                .recipientAddress(to)
+                .recipientName(userName)
+                .subject(subject)
+                .template(templateContent)
+                .build();
+        sendMail(emailContent);
     }
 }
