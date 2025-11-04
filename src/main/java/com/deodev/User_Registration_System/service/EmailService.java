@@ -1,10 +1,10 @@
 package com.deodev.User_Registration_System.service;
 
-import com.deodev.User_Registration_System.model.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import com.deodev.User_Registration_System.dto.EmailContent;
+import org.springframework.scheduling.annotation.Async;
 
-@Service
-public class EmailService {
+public interface EmailService {
 
+    @Async("taskExecutor")
+    void sendMail(EmailContent emailContent);
 }

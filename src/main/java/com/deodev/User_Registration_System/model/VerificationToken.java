@@ -23,6 +23,7 @@ public class VerificationToken {
     @Column(nullable = false)
     private UUID id;
 
+    @Column(nullable = false)
     private String token;
 
     private LocalDateTime expiresAt;
@@ -33,6 +34,6 @@ public class VerificationToken {
 
     @PrePersist
     protected void onCreate() {
-        this.expiresAt = LocalDateTime.now();
+        this.expiresAt = LocalDateTime.now().plusHours(1);
     }
 }
