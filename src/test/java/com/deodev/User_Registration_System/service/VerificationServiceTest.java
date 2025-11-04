@@ -107,21 +107,4 @@ class VerificationServiceTest {
         verify(tokenRepository, never()).delete(any(VerificationToken.class));
         verify(emailService, never()).sendWelcomeEmail(anyString(), anyString());
     }
-
-    @Test
-    void register_whenUserRegisters_createsTokenAndSendsVerificationEmail() {
-        // Given
-        when(userService.saveUser(any(User.class))).thenReturn(user);
-        when(tokenRepository.save(any(VerificationToken.class))).thenReturn(verificationToken);
-
-        // When
-        VerificationToken result = verificationService.register(user);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(TEST_TOKEN, result.getToken());
-        verify(userService, times(1)).saveUser(user);
-        verify(tokenRepository, times(1)).save(any(VerificationToken.class));
-        verify(emailService, times(1)).sendVerificationEmail(eq(user.getEmail()), eq(user.getFirstname()), anyString());
-    }
 }

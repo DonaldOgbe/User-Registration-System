@@ -6,7 +6,6 @@ import com.deodev.User_Registration_System.dto.request.RegisterRequest;
 import com.deodev.User_Registration_System.dto.response.ApiResponse;
 import com.deodev.User_Registration_System.dto.response.AuthResponse;
 import com.deodev.User_Registration_System.service.AuthService;
-import com.deodev.User_Registration_System.service.VerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final VerificationService verificationService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> register(@RequestBody RegisterRequest registerRequest) {
@@ -36,11 +34,5 @@ public class AuthController {
     public ResponseEntity<ApiResponse<?>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
         ApiResponse<?> response = authService.refreshToken(refreshTokenRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @GetMapping("/verify")
-    public ResponseEntity<ApiResponse<?>> verifyToken(@RequestParam String token) {
-        verificationService.activateUser(token);
-        return new ResponseEntity<>(ApiResponse.success("Account activated successfully.", null), HttpStatus.OK);
     }
 }

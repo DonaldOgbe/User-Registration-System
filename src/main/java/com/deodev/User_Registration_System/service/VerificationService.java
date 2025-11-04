@@ -37,17 +37,6 @@ public class VerificationService {
     }
 
     @Transactional
-    public VerificationToken register(User user) {
-        log.info("Registering user: {}", user.getEmail());
-        User savedUser = userService.saveUser(user);
-        VerificationToken verificationToken = createVerificationToken(savedUser);
-        String activationLink = appBaseUrl + "/api/v1/auth/verify?token=" + verificationToken.getToken();
-        emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getFirstname(), activationLink);
-        log.info("User registered and verification email sent to: {}", savedUser.getEmail());
-        return verificationToken;
-    }
-
-    @Transactional
     public void activateUser(String token) {
         log.info("Attempting to activate user with token: {}", token);
         VerificationToken verificationToken = tokenRepository.findByToken(token)
