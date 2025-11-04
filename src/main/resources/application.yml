@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: prod
 
 app:
   base-url: ${APP_BASE_URL}

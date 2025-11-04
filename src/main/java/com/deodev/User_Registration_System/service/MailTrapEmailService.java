@@ -1,8 +1,6 @@
 package com.deodev.User_Registration_System.service;
 
 import com.deodev.User_Registration_System.dto.EmailContent;
-import io.mailtrap.config.MailtrapConfig;
-import io.mailtrap.factory.MailtrapClientFactory;
 import io.mailtrap.model.request.emails.Address;
 import io.mailtrap.model.request.emails.MailtrapMail;
 import io.mailtrap.model.response.emails.SendResponse;
@@ -24,13 +22,12 @@ public class MailTrapEmailService implements EmailService{
     @Value("${email.api-key}")
     private String providerToken;
 
+    private final MailTrapClientFactory mailTrapClientFactory;
+
     @Override
     public void sendMail(EmailContent emailContent) {
-        final var config = new MailtrapConfig.Builder()
-                .token(providerToken)
-                .build();
 
-        final var client = MailtrapClientFactory.createMailtrapClient(config);
+        final var client = mailTrapClientFactory.createMailTrapClient(providerToken);
 
         final var mail = MailtrapMail.builder()
                 .from(new Address(appDomain))

@@ -6,9 +6,11 @@ import com.deodev.User_Registration_System.dto.request.RegisterRequest;
 import com.deodev.User_Registration_System.dto.response.AuthResponse;
 import com.deodev.User_Registration_System.model.Role;
 import com.deodev.User_Registration_System.model.User;
+import com.deodev.User_Registration_System.model.VerificationToken;
 import com.deodev.User_Registration_System.model.enums.UserStatus;
 import com.deodev.User_Registration_System.repository.RoleRepository;
 import com.deodev.User_Registration_System.repository.UserRepository;
+import com.deodev.User_Registration_System.repository.VerificationTokenRepository;
 import com.deodev.User_Registration_System.service.RoleService;
 import com.deodev.User_Registration_System.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,10 +26,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -57,11 +62,15 @@ public class AuthControllerIntegrationTest {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+
     private Role userRole;
 
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        verificationTokenRepository.deleteAll();
         userRole = roleService.getDefaultRole();
     }
 
@@ -138,5 +147,79 @@ public class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Token refreshed successfully"))
                 .andExpect(jsonPath("$.data.accessToken").exists())
                 .andExpect(jsonPath("$.data.refreshToken").exists());
+    }
+
+    @Test
+    void verifyToken_whenTokenIsValid_returnsOk() throws Exception {
+        // Given
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .firstname("Test")
+                .lastname("User")
+                .email("test.user@example.com")
+                .password(passwordEncoder.encode("password"))
+                .status(UserStatus.PENDING)
+                .roles(Set.of(userRole))
+                .build();
+        userRepository.save(user);
+
+        VerificationToken verificationToken = VerificationToken.builder()
+                .token("valid-token")
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .build();
+        verificationTokenRepository.save(verificationToken);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/auth/verify")
+                        .param("token", "valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Account activated successfully."));
+
+        assertThat(userRepository.findByEmail("test.user@example.com").get().getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(verificationTokenRepository.findByToken("valid-token")).isEmpty();
+    }
+
+    @Test
+    void verifyToken_whenTokenIsInvalid_returnsBadRequest() throws Exception {
+        // Given
+        // No token saved in the repository
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/auth/verify")
+                        .param("token", "invalid-token"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").value("Invalid verification token."));
+    }
+
+    @Test
+    void verifyToken_whenTokenIsExpired_returnsBadRequest() throws Exception {
+        // Given
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .firstname("Expired")
+                .lastname("User")
+                .email("expired.user@example.com")
+                .password(passwordEncoder.encode("password"))
+                .status(UserStatus.PENDING)
+                .roles(Set.of(userRole))
+                .build();
+        userRepository.save(user);
+
+        VerificationToken verificationToken = VerificationToken.builder()
+                .token("expired-token")
+                .user(user)
+                .expiresAt(LocalDateTime.now().minusMinutes(10))
+                .build();
+        verificationTokenRepository.save(verificationToken);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/auth/verify")
+                        .param("token", "expired-token"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").value("Verification token has expired."));
     }
 }
