@@ -13,7 +13,7 @@ public record ApiResponse<T>(
         return new ApiResponse<>(true, message, data, null);
     }
 
-    public static <T> ApiResponse<T> error(String message, T data, String error) {
+    public static ApiResponse<ErrorResponse> error(String message, ErrorResponse data, String error) {
         return new ApiResponse<>(false, message, data, error);
     }
 }
