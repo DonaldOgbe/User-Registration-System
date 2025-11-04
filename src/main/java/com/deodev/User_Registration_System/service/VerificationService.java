@@ -1,6 +1,7 @@
 package com.deodev.User_Registration_System.service;
 
 import com.deodev.User_Registration_System.commons.AppConstants;
+import com.deodev.User_Registration_System.dto.EmailContent;
 import com.deodev.User_Registration_System.exception.VerificationTokenException;
 import com.deodev.User_Registration_System.model.User;
 import com.deodev.User_Registration_System.model.enums.UserStatus;
@@ -23,6 +24,7 @@ public class VerificationService {
     private final VerificationTokenRepository tokenRepository;
     private final UserService userService;
     private final EmailService emailService;
+    private final TemplateService templateService;
 
     @Value("${app.base-url}")
     private String appBaseUrl;
@@ -54,7 +56,35 @@ public class VerificationService {
         user.setStatus(UserStatus.ACTIVE);
         userService.saveUser(user);
         tokenRepository.delete(verificationToken);
-        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstname());
+        sendWelcomeEmail(user);
         log.info("User {} activated successfully and welcome email sent.", user.getEmail());
+    }
+
+    public VerificationToken sendVerificationLink(User user) {
+        VerificationToken verificationToken = createVerificationToken(user);
+        sendVerificationMail(user, verificationToken.getToken());
+        return verificationToken;
+    }
+
+    private void sendVerificationMail(User user, String token) {
+        String activationLink = appBaseUrl + "/api/v1/auth/verify?token=" + token;
+        String htmlContent = templateService.buildVerificationEmailContent(user.getFirstname(), activationLink);
+        EmailContent emailContent = EmailContent.builder()
+                .template(htmlContent)
+                .subject("Account Verification")
+                .recipientName(user.getFirstname())
+                .recipientAddress(user.getEmail())
+                .build();
+
+        emailService.sendMail(emailContent);
+    }
+
+
+
+    void sendWelcomeEmail(User user) {
+        String html = templateService.buildWelcomeEmailContent(user.getFirstname());
+        emailService.sendMail(EmailContent.builder()
+                .template(html).subject("Welcome!")
+                .recipientName(user.getFirstname()).recipientAddress(user.getEmail()).build());
     }
 }

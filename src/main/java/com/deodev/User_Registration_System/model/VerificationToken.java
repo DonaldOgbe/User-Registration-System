@@ -34,6 +34,6 @@ public class VerificationToken {
 
     @PrePersist
     protected void onCreate() {
-        this.expiresAt = LocalDateTime.now();
+        this.expiresAt = LocalDateTime.now().plusHours(1);
     }
 }

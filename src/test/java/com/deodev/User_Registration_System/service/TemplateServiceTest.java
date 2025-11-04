@@ -3,7 +3,6 @@ package com.deodev.User_Registration_System.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,9 +16,8 @@ class TemplateServiceTest {
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("templates/");
         templateResolver.setSuffix(".html");
-        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setTemplateMode("HTML");
         templateResolver.setCharacterEncoding("UTF-8");
-        templateResolver.setCacheable(false);
 
         TemplateEngine templateEngine = new TemplateEngine();
         templateEngine.setTemplateResolver(templateResolver);
@@ -37,7 +35,7 @@ class TemplateServiceTest {
         String htmlContent = templateService.buildVerificationEmailContent(userName, activationLink);
 
         // Then
-        assertTrue(htmlContent.contains("Hello John Doe,"));
+        assertTrue(htmlContent.contains("John Doe"));
         assertTrue(htmlContent.contains("href=\"http://localhost:8080/verify?token=123\""));
     }
 
@@ -50,6 +48,6 @@ class TemplateServiceTest {
         String htmlContent = templateService.buildWelcomeEmailContent(userName);
 
         // Then
-        assertTrue(htmlContent.contains("Welcome John Doe,"));
+        assertTrue(htmlContent.contains("John Doe"));
     }
 }

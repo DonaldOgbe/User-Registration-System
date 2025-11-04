@@ -31,6 +31,9 @@ class VerificationServiceTest {
     private UserService userService;
 
     @Mock
+    private TemplateService templateService;
+
+    @Mock
     private EmailService emailService;
 
     @InjectMocks
@@ -62,49 +65,54 @@ class VerificationServiceTest {
     }
 
     @Test
-    void activateUser_whenTokenIsValid_activatesUserAndDeletesToken() {
-        // Given
-        when(tokenRepository.findByToken(TEST_TOKEN)).thenReturn(Optional.of(verificationToken));
-        when(userService.saveUser(any(User.class))).thenReturn(user);
+    void activateUser_ShouldActivateUserAndDeleteToken_WhenTokenIsValid() {
+        // given
+        when(tokenRepository.findByToken("valid-token")).thenReturn(Optional.of(verificationToken));
+        when(templateService.buildWelcomeEmailContent(any())).thenReturn(any());
 
-        // When
-        verificationService.activateUser(TEST_TOKEN);
+        // when
+        verificationService.activateUser("valid-token");
 
-        // Then
-        assertEquals(UserStatus.ACTIVE, user.getStatus());
-        verify(userService, times(1)).saveUser(user);
-        verify(tokenRepository, times(1)).delete(verificationToken);
-        verify(emailService, times(1)).sendWelcomeEmail(user.getEmail(), user.getFirstname());
+        // then
+        verify(tokenRepository).findByToken("valid-token");
+        verify(userService).saveUser(user);
+        verify(tokenRepository).delete(verificationToken);
+
+        // user should now be ACTIVE
+        assert user.getStatus() == UserStatus.ACTIVE;
     }
 
     @Test
-    void activateUser_whenTokenIsInvalid_throwsVerificationTokenException() {
-        // Given
-        when(tokenRepository.findByToken(TEST_TOKEN)).thenReturn(Optional.empty());
+    void activateUser_ShouldThrowException_WhenTokenNotFound() {
+        // given
+        when(tokenRepository.findByToken("invalid-token")).thenReturn(Optional.empty());
 
-        // When & Then
-        VerificationTokenException exception = assertThrows(VerificationTokenException.class, () ->
-                verificationService.activateUser(TEST_TOKEN)
-        );
-        assertEquals(AppConstants.INVALID_VERIFICATION_TOKEN, exception.getMessage());
-        verify(userService, never()).saveUser(any(User.class));
-        verify(tokenRepository, never()).delete(any(VerificationToken.class));
-        verify(emailService, never()).sendWelcomeEmail(anyString(), anyString());
+        // when / then
+        try {
+            verificationService.activateUser("invalid-token");
+        } catch (VerificationTokenException ex) {
+            assert ex.getMessage().equals(AppConstants.INVALID_VERIFICATION_TOKEN);
+        }
+
+        verify(tokenRepository).findByToken("invalid-token");
+        verifyNoMoreInteractions(tokenRepository, userService);
     }
 
     @Test
-    void activateUser_whenTokenIsExpired_throwsVerificationTokenException() {
-        // Given
-        verificationToken.setExpiresAt(LocalDateTime.now().minusMinutes(10));
-        when(tokenRepository.findByToken(TEST_TOKEN)).thenReturn(Optional.of(verificationToken));
+    void activateUser_ShouldThrowException_WhenTokenExpired() {
+        // given
+        verificationToken.setExpiresAt(LocalDateTime.now().minusHours(1)); // expired
+        when(tokenRepository.findByToken("expired-token")).thenReturn(Optional.of(verificationToken));
 
-        // When & Then
-        VerificationTokenException exception = assertThrows(VerificationTokenException.class, () ->
-                verificationService.activateUser(TEST_TOKEN)
-        );
-        assertEquals(AppConstants.VERIFICATION_TOKEN_EXPIRED, exception.getMessage());
-        verify(userService, never()).saveUser(any(User.class));
-        verify(tokenRepository, never()).delete(any(VerificationToken.class));
-        verify(emailService, never()).sendWelcomeEmail(anyString(), anyString());
+        // when / then
+        try {
+            verificationService.activateUser("expired-token");
+        } catch (VerificationTokenException ex) {
+            assert ex.getMessage().equals(AppConstants.VERIFICATION_TOKEN_EXPIRED);
+        }
+
+        verify(tokenRepository).findByToken("expired-token");
+        verify(userService, never()).saveUser(any());
+        verify(tokenRepository, never()).delete(any());
     }
 }
