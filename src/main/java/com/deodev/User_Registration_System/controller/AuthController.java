@@ -25,14 +25,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest loginRequest) {
-        AuthResponse authResponse = authService.login(loginRequest);
-        return new ResponseEntity<>(ApiResponse.success("Login successful", authResponse), HttpStatus.OK);
+    public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginRequest loginRequest) {
+        ApiResponse<?> response = authService.login(loginRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-        AuthResponse authResponse = authService.refreshToken(refreshTokenRequest);
-        return new ResponseEntity<>(ApiResponse.success("Token refreshed successfully", authResponse), HttpStatus.OK);
+    public ResponseEntity<ApiResponse<?>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        ApiResponse<?> response = authService.refreshToken(refreshTokenRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

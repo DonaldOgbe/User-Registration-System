@@ -1,6 +1,7 @@
 package com.deodev.User_Registration_System.service;
 
 import com.deodev.User_Registration_System.commons.AppConstants;
+import com.deodev.User_Registration_System.dto.EmailContent;
 import com.deodev.User_Registration_System.exception.VerificationTokenException;
 import com.deodev.User_Registration_System.model.User;
 import com.deodev.User_Registration_System.model.enums.UserStatus;
@@ -21,6 +22,7 @@ public class VerificationService {
     private final VerificationTokenRepository tokenRepository;
     private final UserService userService;
     private final EmailService emailService;
+    private final TemplateService templateService;
 
     @Value("${app.base-url}")
     private String appBaseUrl;
@@ -34,12 +36,10 @@ public class VerificationService {
         return tokenRepository.save(verificationToken);
     }
 
-    @Transactional
-    public VerificationToken register(User user) {
-        User savedUser = userService.saveUser(user);
-        VerificationToken verificationToken = createVerificationToken(savedUser);
-        String activationLink = appBaseUrl + "/api/v1/auth/verify?token=" + verificationToken.getToken();
-        emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getFirstname(), activationLink);
+
+    public VerificationToken sendVerificationLink(User user) {
+        VerificationToken verificationToken = createVerificationToken(user);
+        sendVerificationMail(user, verificationToken.getToken());
         return verificationToken;
     }
 
@@ -56,6 +56,21 @@ public class VerificationService {
         user.setStatus(UserStatus.ACTIVE);
         userService.saveUser(user);
         tokenRepository.delete(verificationToken);
-        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstname());
+        sendWelcomeEmail(user);
+    }
+
+    void sendVerificationMail(User user, String token) {
+        String activationLink = appBaseUrl + "/api/v1/auth/verify?token=" + token;
+        String html = templateService.buildVerificationEmailContent(user.getFirstname(), activationLink);
+        emailService.sendMail(EmailContent.builder()
+                .template(html).subject("Account Verification")
+                .recipientName(user.getFirstname()).recipientAddress(user.getEmail()).build());
+    }
+
+    void sendWelcomeEmail(User user) {
+        String html = templateService.buildWelcomeEmailContent(user.getFirstname());
+        emailService.sendMail(EmailContent.builder()
+                .template(html).subject("Welcome!")
+                .recipientName(user.getFirstname()).recipientAddress(user.getEmail()).build());
     }
 }

@@ -7,10 +7,4 @@ public interface EmailService {
 
     @Async("taskExecutor")
     void sendMail(EmailContent emailContent);
-
-    @Async("taskExecutor")
-    void sendVerificationEmail(String to, String userName, String activationLink);
-
-    @Async("taskExecutor")
-    void sendWelcomeEmail(String to, String userName);
 }

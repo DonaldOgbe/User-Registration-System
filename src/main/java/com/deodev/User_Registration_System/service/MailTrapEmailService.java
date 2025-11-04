@@ -18,8 +18,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MailTrapEmailService implements EmailService{
 
-    private final TemplateService templateService;
-
     @Value("${email.from}")
     private String appDomain;
 
@@ -48,31 +46,5 @@ public class MailTrapEmailService implements EmailService{
         } catch (Exception ex) {
             log.error("Unexpected error while sending email to {}", mail.getTo(), ex);
         }
-    }
-
-    @Override
-    public void sendVerificationEmail(String to, String userName, String activationLink) {
-        String subject = "Account Verification";
-        String templateContent = templateService.buildVerificationEmailContent(userName, activationLink);
-        EmailContent emailContent = EmailContent.builder()
-                .recipientAddress(to)
-                .recipientName(userName)
-                .subject(subject)
-                .template(templateContent)
-                .build();
-        sendMail(emailContent);
-    }
-
-    @Override
-    public void sendWelcomeEmail(String to, String userName) {
-        String subject = "Welcome!";
-        String templateContent = templateService.buildWelcomeEmailContent(userName);
-        EmailContent emailContent = EmailContent.builder()
-                .recipientAddress(to)
-                .recipientName(userName)
-                .subject(subject)
-                .template(templateContent)
-                .build();
-        sendMail(emailContent);
     }
 }

@@ -23,6 +23,7 @@ public class VerificationToken {
     @Column(nullable = false)
     private UUID id;
 
+    @Column(nullable = false)
     private String token;
 
     private LocalDateTime expiresAt;
