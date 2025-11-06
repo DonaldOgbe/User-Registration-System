@@ -1,6 +1,9 @@
 spring:
   profiles:
-    active: prod
+    active: dev
+
+  application:
+    name: user-registration-system
 
 app:
   base-url: ${APP_BASE_URL}
