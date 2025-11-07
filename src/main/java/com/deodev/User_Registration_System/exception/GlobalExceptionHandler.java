@@ -29,4 +29,10 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), request.getRequestURI());
         return new ResponseEntity<>(ApiResponse.error(ex.getMessage(), errorResponse, ex.getMessage()), HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleException(Exception ex, HttpServletRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), request.getRequestURI());
+        return new ResponseEntity<>(ApiResponse.error(ex.getMessage(), errorResponse, ex.getMessage()), HttpStatus.NOT_FOUND);
+    }
 }
