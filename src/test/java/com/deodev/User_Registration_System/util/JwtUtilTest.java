@@ -1,13 +1,21 @@
 package com.deodev.User_Registration_System.util;
 
+import com.deodev.User_Registration_System.config.CustomUserDetails;
 import com.deodev.User_Registration_System.exception.TokenValidationException;
+import com.deodev.User_Registration_System.model.Role;
+import com.deodev.User_Registration_System.model.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -15,6 +23,8 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 
 class JwtUtilTest {
@@ -25,6 +35,7 @@ class JwtUtilTest {
     private UUID userId;
     private Map<String, Object> extraClaims;
     private List<String> authorities;
+    private UserDetailsService userDetailsService;
 
     @BeforeEach
     void setup() {
@@ -33,7 +44,8 @@ class JwtUtilTest {
         jwtSecretUtil.setExpiration(new JwtSecretUtil.Expiration());
         jwtSecretUtil.getExpiration().setAccess(1);
         jwtSecretUtil.getExpiration().setRefresh(7);
-        jwtUtil = new JwtUtil(jwtSecretUtil);
+        userDetailsService = Mockito.mock(UserDetailsService.class);
+        jwtUtil = new JwtUtil(jwtSecretUtil, userDetailsService);
         subject = "testSubject";
         userId = UUID.randomUUID();
         extraClaims = new HashMap<>();
@@ -88,6 +100,13 @@ class JwtUtilTest {
     void testIfValidAuthenticationIsGenerated() {
         // given
         String token = jwtUtil.generateAccessToken(subject, extraClaims);
+        User user = User.builder()
+                .email(subject)
+                .roles(Set.of(Role.builder().name("USER").build(), Role.builder().name("ADMIN").build()))
+                .build();
+
+        CustomUserDetails userDetails = new CustomUserDetails(user);
+        when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
 
         // when
         Authentication authentication = jwtUtil.getAuthenticationFromToken(token);
@@ -96,7 +115,7 @@ class JwtUtilTest {
                 .toList();
 
         // then
-        assertThat(subject).isEqualTo(authentication.getPrincipal());
+        assertThat(userDetails).isEqualTo(authentication.getPrincipal());
         assertThat(tokenAuthorities).contains("USER", "ADMIN");
     }
 

@@ -23,8 +23,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.Set;
 
 import static org.mockito.Mockito.when;
@@ -103,6 +103,7 @@ public class AuthControllerIntegrationTest {
                 .password(passwordEncoder.encode("password"))
                 .status(UserStatus.ACTIVE)
                 .roles(Set.of(userRole))
+                .passwordUpdatedAt(new Date())
                 .build();
         userRepository.save(user);
 

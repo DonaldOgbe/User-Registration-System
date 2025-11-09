@@ -6,14 +6,13 @@ import lombok.Builder;
 public record ApiResponse<T>(
         boolean success,
         String message,
-        T data,
-        String error
+        T data
 ) {
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, data, null);
+        return new ApiResponse<>(true, message, data);
     }
 
-    public static ApiResponse<ErrorResponse> error(String message, ErrorResponse data, String error) {
-        return new ApiResponse<>(false, message, data, error);
+    public static ApiResponse<ErrorResponse> error(String message, ErrorResponse data) {
+        return new ApiResponse<>(false, message, data);
     }
 }

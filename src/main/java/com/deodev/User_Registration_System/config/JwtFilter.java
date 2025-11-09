@@ -1,11 +1,12 @@
-package com.deodev.userService.config;
+package com.deodev.User_Registration_System.config;
 
-import com.deodev.userService.dto.response.ApiResponse;
-import com.deodev.userService.dto.response.ErrorResponse;
-import com.deodev.userService.enums.ErrorCode;
-import com.deodev.userService.exception.TokenValidationException;
-import com.deodev.userService.util.JwtUtil;
+import com.deodev.User_Registration_System.dto.response.ApiResponse;
+import com.deodev.User_Registration_System.dto.response.ErrorResponse;
+import com.deodev.User_Registration_System.exception.TokenValidationException;
+import com.deodev.User_Registration_System.service.UserService;
+import com.deodev.User_Registration_System.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,11 +16,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.util.Date;
+
+import static com.deodev.User_Registration_System.commons.AppConstants.*;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -62,22 +69,37 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     void validateAndAuthenticate(String jwt, HttpServletRequest request) {
-        if (!jwtUtil.isValidToken(jwt)) {
-            throw new TokenValidationException("Invalid token");
+        if (!jwtUtil.validateToken(jwt)) {
+            throw new TokenValidationException(ACCESS_TOKEN_INVALID);
         }
-        verifyAndSetAuthentication(jwt);
+
+        verifyUsernameAndSetAuthentication(jwt);
         setUserIdAttribute(jwt, request);
     }
 
-    void verifyAndSetAuthentication(String jwt) {
+    void verifyUsernameAndSetAuthentication(String jwt) {
         String username = jwtUtil.getUsernameFromToken(jwt);
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             SecurityContextHolder.getContext().setAuthentication(jwtUtil.getAuthenticationFromToken(jwt));
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        verifyPasswordUpdatedAt(jwt, userDetails);
+    }
+
+    void verifyPasswordUpdatedAt(String jwt, CustomUserDetails userDetails) {
+        Date passwordUpAt = userDetails.getPasswordUpdatedAt();
+        Date iat = jwtUtil.getClaimFromToken(jwt, Claims::getIssuedAt);
+
+        if (iat.before(passwordUpAt)) {
+            throw new TokenValidationException(ACCESS_TOKEN_INVALID);
         }
     }
 
     void setUserIdAttribute(String jwt, HttpServletRequest request) {
         Object userId = jwtUtil.getClaimFromToken(jwt, claims -> (String) claims.get("userId"));
+
         if (userId != null) {
             request.setAttribute("userId", String.valueOf(userId));
         }
@@ -87,36 +109,30 @@ public class JwtFilter extends OncePerRequestFilter {
         SecurityContextHolder.clearContext();
         log.warn("Token validation failed for [{} {}]: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
 
-        writeErrorResponse(response, HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_TOKEN,
-                "Invalid or expired token", request.getRequestURI());
+        writeErrorResponse(response, HttpStatus.UNAUTHORIZED, ACCESS_TOKEN_INVALID,
+                FAILED_AUTHORIZATION, request.getRequestURI());
     }
 
     void handleUnexpectedError(HttpServletRequest request, HttpServletResponse response, Exception e) throws IOException {
         SecurityContextHolder.clearContext();
         log.error("Unexpected error in auth filter for {} {}", request.getMethod(), request.getRequestURI(), e);
 
-        writeErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.SYSTEM_ERROR,
-                "Internal server error", request.getRequestURI());
+        writeErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR,
+                FAILED_AUTHORIZATION, request.getRequestURI());
     }
 
     void writeErrorResponse(HttpServletResponse response,
-                                    HttpStatus status,
-                                    ErrorCode errorCode,
-                                    String message,
-                                    String path) throws IOException {
+                            HttpStatus status,
+                            String error,
+                            String message,
+                            String path) throws IOException {
 
         ErrorResponse data = ErrorResponse.builder()
-                .message(message)
+                .error(error)
                 .path(path)
                 .build();
 
-        ApiResponse<ErrorResponse> apiResponse = ApiResponse.<ErrorResponse>builder()
-                .success(false)
-                .statusCode(status.value())
-                .timestamp(LocalDateTime.now())
-                .errorCode(errorCode)
-                .data(data)
-                .build();
+        ApiResponse<ErrorResponse> apiResponse = ApiResponse.error(message, data);
 
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

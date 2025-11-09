@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,6 +40,7 @@ public class UserService {
                 .password(passwordEncoder.encode(registerRequest.password()))
                 .status(UserStatus.PENDING)
                 .roles(Set.of(roleService.getDefaultRole()))
+                .passwordUpdatedAt(new Date())
                 .build();
         return userRepository.save(user);
     }
@@ -47,10 +49,14 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public User findUserById(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
+    }
+
     public ApiResponse<?> getUser(UUID userId) {
         log.info("Fetching user with ID: {}", userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
+        User user = findUserById(userId);
 
         UserDetailsResponse userDetails = UserDetailsResponse.builder()
                 .userId(user.getId())
@@ -85,7 +91,7 @@ public class UserService {
     }
 
     @Transactional
-    public ApiResponse<Void> changePassword(ChangePasswordRequest request) {
+    public ApiResponse<?> changePassword(ChangePasswordRequest request) {
         log.info("Attempting to change password for user with ID: {}", request.userId());
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
@@ -94,21 +100,21 @@ public class UserService {
         verifyNewPasswordMatch(request.newPassword(), request.confirmPassword());
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
-        user.setPasswordUpdatedAt(Instant.now());
+        user.setPasswordUpdatedAt(new Date());
         userRepository.save(user);
 
         log.info("Password changed successfully for user with ID: {}", request.userId());
         return ApiResponse.success(AppConstants.PASSWORD_CHANGE_SUCCESS, null);
     }
 
-    private void verifyOldPassword(String rawPassword, String encodedPassword) {
+    void verifyOldPassword(String rawPassword, String encodedPassword) {
         if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
             log.warn("Old password verification failed.");
             throw new InvalidPasswordException(AppConstants.INVALID_OLD_PASSWORD);
         }
     }
 
-    private void verifyNewPasswordMatch(String newPassword, String confirmPassword) {
+    void verifyNewPasswordMatch(String newPassword, String confirmPassword) {
         if (!newPassword.equals(confirmPassword)) {
             log.warn("New password and confirm password do not match.");
             throw new InvalidPasswordException(AppConstants.PASSWORD_MISMATCH);
