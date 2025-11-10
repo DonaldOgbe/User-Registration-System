@@ -61,7 +61,7 @@ public class AuthService {
 
             return ApiResponse.success(USER_REGISTRATION_SUCCESS,
                     AuthResponse.builder()
-                            .accessToken(newAccessToken).refreshToken(newRefreshToken).build());
+                            .accessToken(newAccessToken).refreshToken(newRefreshToken).userId(user.getId()).build());
         } catch (Exception ex) {
             log.error("Unexpected error during registration for user: {}, Error: {}", registerRequest.email(), ex.getMessage());
             throw ex;
@@ -87,7 +87,7 @@ public class AuthService {
 
             return ApiResponse.success(USER_LOGIN_SUCCESS,
                     AuthResponse.builder()
-                            .accessToken(accessToken).refreshToken(refreshToken).build());
+                            .accessToken(accessToken).refreshToken(refreshToken).userId(user.getId()).build());
         } catch (Exception ex) {
             log.error("Unexpected error during login for user: {}, Error: {}", loginRequest.email(), ex.getMessage());
             throw ex;

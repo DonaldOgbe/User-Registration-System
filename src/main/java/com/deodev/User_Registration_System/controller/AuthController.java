@@ -7,6 +7,8 @@ import com.deodev.User_Registration_System.dto.response.ApiResponse;
 import com.deodev.User_Registration_System.dto.response.AuthResponse;
 import com.deodev.User_Registration_System.service.AuthService;
 import com.deodev.User_Registration_System.service.VerificationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final VerificationService verificationService;
+
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> register(@RequestBody RegisterRequest request) {
