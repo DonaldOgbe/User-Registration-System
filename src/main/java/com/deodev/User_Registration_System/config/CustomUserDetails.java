@@ -7,6 +7,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 public record CustomUserDetails(User user) implements UserDetails {
@@ -46,5 +47,9 @@ public record CustomUserDetails(User user) implements UserDetails {
     @Override
     public boolean isEnabled() {
         return user.getStatus() != UserStatus.INACTIVE;
+    }
+
+    public Date getPasswordUpdatedAt() {
+        return user.getPasswordUpdatedAt();
     }
 }

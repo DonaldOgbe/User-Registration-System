@@ -23,8 +23,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.Set;
 
 import static org.mockito.Mockito.when;
@@ -103,6 +103,7 @@ public class AuthControllerIntegrationTest {
                 .password(passwordEncoder.encode("password"))
                 .status(UserStatus.ACTIVE)
                 .roles(Set.of(userRole))
+                .passwordUpdatedAt(new Date())
                 .build();
         userRepository.save(user);
 
@@ -151,7 +152,7 @@ public class AuthControllerIntegrationTest {
         User user = User.builder()
                 .firstname("Test")
                 .lastname("User")
-                .email("test.user@example.com")
+                .email("authtest.user@example.com")
                 .password(passwordEncoder.encode("password"))
                 .status(UserStatus.PENDING)
                 .roles(Set.of(userRole))
@@ -171,7 +172,7 @@ public class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Account activated successfully."));
 
-        assertThat(userRepository.findByEmail("test.user@example.com").get().getStatus())
+        assertThat(userRepository.findByEmail("authtest.user@example.com").get().getStatus())
                 .isEqualTo(UserStatus.ACTIVE);
     }
 }
