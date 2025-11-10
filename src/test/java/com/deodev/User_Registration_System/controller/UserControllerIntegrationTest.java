@@ -21,8 +21,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-import java.util.UUID;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -32,7 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Transactional
 public class UserControllerIntegrationTest {
 
     @Autowired
@@ -53,33 +53,36 @@ public class UserControllerIntegrationTest {
     @Autowired
     private JwtUtil jwtUtil;
 
-    private User testUser;
-    private String accessToken;
-
-    @BeforeEach
-    void setUp() {
-        userRepository.deleteAll(); // Ensure a clean state for each test
-
+    private User createAndSaveUser(String email) {
         Role userRole = roleService.getDefaultRole();
-
-        testUser = User.builder()
-                .id(UUID.randomUUID())
+        User user = User.builder()
                 .firstname("Test")
                 .lastname("User")
-                .email("test.user@example.com")
+                .email(email)
                 .password(passwordEncoder.encode("password"))
                 .status(UserStatus.ACTIVE)
                 .roles(Set.of(userRole))
+                .passwordUpdatedAt(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
                 .build();
-        userRepository.save(testUser);
-
-        accessToken = jwtUtil.generateAccessToken(testUser.getEmail());
+        return userRepository.save(user);
     }
+
+    private String generateToken(User user) {
+        Map<String, Object> claims = Map.of(
+                "passwordUpAt", user.getPasswordUpdatedAt(),
+                "authorities", List.of("USER"),
+                "userId", user.getId()
+        );
+        return jwtUtil.generateAccessToken(user.getEmail(), claims);
+    }
+
 
     @Test
     void getUser_shouldReturnUserDetails_whenAuthenticated() throws Exception {
         // given
-        UUID userId = testUser.getId();
+        User user = createAndSaveUser("getuser@example.com");
+        String accessToken = generateToken(user);
+        UUID userId = user.getId();
 
         // when & then
         mockMvc.perform(get("/api/v1/users/{userId}", userId)
@@ -89,16 +92,19 @@ public class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value(AppConstants.USER_FETCH_SUCCESS))
                 .andExpect(jsonPath("$.data.userId").value(userId.toString()))
-                .andExpect(jsonPath("$.data.email").value(testUser.getEmail()))
-                .andExpect(jsonPath("$.data.firstName").value(testUser.getFirstname()))
-                .andExpect(jsonPath("$.data.lastName").value(testUser.getLastname()));
+                .andExpect(jsonPath("$.data.email").value(user.getEmail()))
+                .andExpect(jsonPath("$.data.firstName").value(user.getFirstname()))
+                .andExpect(jsonPath("$.data.lastName").value(user.getLastname()));
     }
 
     @Test
     void updateUser_shouldUpdateDetailsSuccessfully() throws Exception {
         // given
+        User user = createAndSaveUser("upadteuser@example.com");
+        String accessToken = generateToken(user);
+
         UpdateUserRequest request = UpdateUserRequest.builder()
-                .userId(testUser.getId())
+                .userId(user.getId())
                 .firstName("UpdatedFirstName")
                 .lastName("UpdatedLastName")
                 .build();
@@ -114,7 +120,7 @@ public class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.firstName").value("UpdatedFirstName"))
                 .andExpect(jsonPath("$.data.lastName").value("UpdatedLastName"));
 
-        User updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
+        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
         assertThat(updatedUser.getFirstname()).isEqualTo("UpdatedFirstName");
         assertThat(updatedUser.getLastname()).isEqualTo("UpdatedLastName");
     }
@@ -122,8 +128,11 @@ public class UserControllerIntegrationTest {
     @Test
     void changePassword_shouldChangePasswordSuccessfully() throws Exception {
         // given
+        User user = createAndSaveUser("changepassword@example.com");
+        String accessToken = generateToken(user);
+
         ChangePasswordRequest request = ChangePasswordRequest.builder()
-                .userId(testUser.getId())
+                .userId(user.getId())
                 .oldPassword("password")
                 .newPassword("newPassword123!")
                 .confirmPassword("newPassword123!")
@@ -138,7 +147,7 @@ public class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value(AppConstants.PASSWORD_CHANGE_SUCCESS));
 
-        User updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
+        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
         assertThat(passwordEncoder.matches("newPassword123!", updatedUser.getPassword())).isTrue();
     }
 }

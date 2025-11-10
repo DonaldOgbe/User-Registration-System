@@ -3,7 +3,6 @@ package com.deodev.User_Registration_System.config;
 import com.deodev.User_Registration_System.dto.response.ApiResponse;
 import com.deodev.User_Registration_System.dto.response.ErrorResponse;
 import com.deodev.User_Registration_System.exception.TokenValidationException;
-import com.deodev.User_Registration_System.service.UserService;
 import com.deodev.User_Registration_System.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -70,6 +69,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     void validateAndAuthenticate(String jwt, HttpServletRequest request) {
         if (!jwtUtil.validateToken(jwt)) {
+            log.error("Invalid or Expired token, URI: [{}]", request.getRequestURI());
             throw new TokenValidationException(ACCESS_TOKEN_INVALID);
         }
 
@@ -93,6 +93,7 @@ public class JwtFilter extends OncePerRequestFilter {
         Date iat = jwtUtil.getClaimFromToken(jwt, Claims::getIssuedAt);
 
         if (iat.before(passwordUpAt)) {
+            log.error("Token Expired, Error: Issued at [{}] is before Password update at [{}]", iat, passwordUpAt);
             throw new TokenValidationException(ACCESS_TOKEN_INVALID);
         }
     }

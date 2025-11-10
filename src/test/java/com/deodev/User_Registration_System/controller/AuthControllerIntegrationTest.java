@@ -152,7 +152,7 @@ public class AuthControllerIntegrationTest {
         User user = User.builder()
                 .firstname("Test")
                 .lastname("User")
-                .email("test.user@example.com")
+                .email("authtest.user@example.com")
                 .password(passwordEncoder.encode("password"))
                 .status(UserStatus.PENDING)
                 .roles(Set.of(userRole))
@@ -172,7 +172,7 @@ public class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Account activated successfully."));
 
-        assertThat(userRepository.findByEmail("test.user@example.com").get().getStatus())
+        assertThat(userRepository.findByEmail("authtest.user@example.com").get().getStatus())
                 .isEqualTo(UserStatus.ACTIVE);
     }
 }

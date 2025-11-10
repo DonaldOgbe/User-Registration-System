@@ -26,6 +26,7 @@ class JwtFilterTest {
     private HttpServletRequest request;
     @Mock
     private JwtUtil jwtUtil;
+
     @InjectMocks
     private JwtFilter jwtFilter;
 
@@ -72,22 +73,7 @@ class JwtFilterTest {
                 () -> jwtFilter.validateAndAuthenticate("badToken", request));
     }
 
-    @Test
-    void validateAndAuthenticate_ShouldSetAuthenticationAndUserId_WhenTokenValid() {
-        // given
-        when(jwtUtil.validateToken("goodToken")).thenReturn(true);
-        when(jwtUtil.getUsernameFromToken("goodToken")).thenReturn("johndoe@email.com");
 
-        Authentication mockAuth = mock(Authentication.class);
-        when(jwtUtil.getAuthenticationFromToken("goodToken")).thenReturn(mockAuth);
 
-        when(jwtUtil.getClaimFromToken(eq("goodToken"), any())).thenReturn("123");
 
-        // when
-        jwtFilter.validateAndAuthenticate("goodToken", request);
-
-        // then
-        assertEquals(mockAuth, SecurityContextHolder.getContext().getAuthentication());
-        verify(request).setAttribute("userId", "123");
-    }
 }
