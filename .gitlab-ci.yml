@@ -1,0 +1,71 @@
+stages:
+  - build
+  - test
+  - docker
+  - deploy
+
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "-B -ntp"
+
+
+build:
+  stage: build
+  image: maven:3.9-eclipse-temurin-21-alpine
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "release"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  cache:
+    key: maven${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
+  script:
+    - echo "Building image..."
+    - mvn $MAVEN_CLI_OPTS clean package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1h
+
+
+test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-21-alpine
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "release"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  needs:
+    - job: build
+      artifacts: true
+  cache:
+    key: maven${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
+  script:
+    - echo "Running Tests"
+    - mvn $MAVEN_CLI_OPTS test
+
+docker:
+  stage: docker
+  image: docker
+  services:
+    - docker:dind
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - echo "Building prod image for $CI_COMMIT_BRANCH"
+    - export TAG_SHA=${CI_COMMIT_SHA:0:8}
+    - export IMAGE_SHA=${REGISTRY_IMAGE}:prod-${TAG_SHA}
+    - export IMAGE_LATEST=${REGISTRY_IMAGE}:prod-latest
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build --build-arg SPRING_PROFILES_ACTIVE=prod -t $IMAGE_SHA -t $IMAGE_LATEST .
+    - docker push $IMAGE_SHA
+    - docker push $IMAGE_LATEST

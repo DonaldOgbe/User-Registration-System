@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: dev
+    active: ${SPRING_ACTIVE_PROFILE}
 
   application:
     name: user-registration-system
