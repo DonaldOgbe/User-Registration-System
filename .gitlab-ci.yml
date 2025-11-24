@@ -65,9 +65,10 @@ docker:
   script:
     - echo "Building prod image for $CI_COMMIT_BRANCH"
     - export TAG_SHA=${CI_COMMIT_SHA:0:8}
-    - export IMAGE_SHA=${$CI_REGISTRY_IMAGE}:prod-${TAG_SHA}
-    - export IMAGE_LATEST=${$CI_REGISTRY_IMAGE}:prod-latest
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - export IMAGE_SHA=${CI_REGISTRY_IMAGE}:prod-${TAG_SHA}
+    - export IMAGE_LATEST=${CI_REGISTRY_IMAGE}:prod-latest
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build --build-arg SPRING_PROFILES_ACTIVE=prod -t $IMAGE_SHA -t $IMAGE_LATEST .
     - docker push $IMAGE_SHA
     - docker push $IMAGE_LATEST
+
