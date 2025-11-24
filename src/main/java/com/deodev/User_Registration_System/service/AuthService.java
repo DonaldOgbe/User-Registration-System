@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.deodev.User_Registration_System.commons.AppConstants.*;
 import java.util.*;
@@ -37,21 +38,19 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
-
+    @Transactional
     public ApiResponse<?> register(RegisterRequest registerRequest) {
         try {
             if (userRepository.findByEmail(registerRequest.email()).isPresent()) {
                 throw new IllegalArgumentException(EMAIL_ALREADY_EXISTS);
             }
             User user = userService.createNewUser(registerRequest);
-            Role userRole = roleRepository.findByName("USER")
-                    .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND));
-            user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
-            userRepository.save(user);
 
-            List<String> authorities = getAuthoritiesFromRoles(user);
+            CustomUserDetails userDetails = authenticate(registerRequest.email(), registerRequest.password());
+            List<String> authorities = getAuthorities(userDetails);
 
             Map<String, Object> claims = new HashMap<>();
+            claims.put("passwordUpAt", user.getPasswordUpdatedAt());
             claims.put("authorities", authorities);
             claims.put("userId", user.getId());
 
@@ -62,7 +61,7 @@ public class AuthService {
 
             return ApiResponse.success(USER_REGISTRATION_SUCCESS,
                     AuthResponse.builder()
-                            .accessToken(newAccessToken).refreshToken(newRefreshToken).build());
+                            .accessToken(newAccessToken).refreshToken(newRefreshToken).userId(user.getId()).build());
         } catch (Exception ex) {
             log.error("Unexpected error during registration for user: {}, Error: {}", registerRequest.email(), ex.getMessage());
             throw ex;
@@ -71,24 +70,24 @@ public class AuthService {
 
     public ApiResponse<?> login(LoginRequest loginRequest) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password())
-            );
 
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            CustomUserDetails userDetails = authenticate(loginRequest.email(), loginRequest.password());
 
             List<String> authorities = getAuthorities(userDetails);
 
             Map<String, Object> claims = new HashMap<>();
+            User user = userService.findUserById(userDetails.user().getId());
+            claims.put("passwordUpAt", user.getPasswordUpdatedAt());
             claims.put("authorities", authorities);
             claims.put("userId", userDetails.user().getId());
+
 
             String accessToken = jwtUtil.generateAccessToken(userDetails.getUsername(), claims);
             String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
 
             return ApiResponse.success(USER_LOGIN_SUCCESS,
                     AuthResponse.builder()
-                            .accessToken(accessToken).refreshToken(refreshToken).build());
+                            .accessToken(accessToken).refreshToken(refreshToken).userId(user.getId()).build());
         } catch (Exception ex) {
             log.error("Unexpected error during login for user: {}, Error: {}", loginRequest.email(), ex.getMessage());
             throw ex;
@@ -123,6 +122,13 @@ public class AuthService {
             throw ex;
         }
 
+    }
+
+    CustomUserDetails authenticate(String email, String password) {
+        Authentication loginAuthentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password));
+
+        return (CustomUserDetails) loginAuthentication.getPrincipal();
     }
 
     List<String> getAuthoritiesFromRoles(User user) {

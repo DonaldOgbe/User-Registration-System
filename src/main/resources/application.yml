@@ -1,25 +1,28 @@
 spring:
   profiles:
-    active: prod
+    active: ${SPRING_ACTIVE_PROFILE}
+
+  application:
+    name: user-registration-system
 
 app:
-  base-url: ${APP_BASE_URL}
+  base-url: http://localhost:8080
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: xSivtQFAQx9ij7qkTaZGxClzFB8mfXaBCuZHpzzmPTD/A0g7vmbi4+RW1yoVztMz
   expiration:
-    access: ${JWT_EXPIRATION_ACCESS_TOKEN}
-    refresh: ${JWT_EXPIRATION_REFRESH_TOKEN}
+    access: 1
+    refresh: 1
 
 email:
-  from: ${APP_DOMAIN_EMAIL_ADDRESS}
-  provider: ${EMAIL_PROVIDER}
-  api-key: ${EMAIL_PROVIDER_TOKEN}
+  from: noreply@example.com
+  provider: test
+  api-key: dummy-key
 
 async:
   executor:
-    core-pool-size: ${ASYNC_THREAD_CORE_POOL_SIZE}
-    max-pool-size: ${ASYNC_THREAD_MAX_POOL_SIZE}
-    queue-capacity: ${ASYNC_THREAD_QUEUE_CAPACITY}
-    keep-alive-seconds: ${ASYNC_THREAD_KEEP_ALIVE_SECONDS}
-    thread-name: ${ASYNC_THREAD_NAME}
+    core-pool-size: 2
+    max-pool-size: 4
+    queue-capacity: 10
+    keep-alive-seconds: 30
+    thread-name: test-thread

@@ -7,11 +7,15 @@ import com.deodev.User_Registration_System.dto.response.ApiResponse;
 import com.deodev.User_Registration_System.dto.response.AuthResponse;
 import com.deodev.User_Registration_System.service.AuthService;
 import com.deodev.User_Registration_System.service.VerificationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -20,26 +24,31 @@ public class AuthController {
     private final AuthService authService;
     private final VerificationService verificationService;
 
+
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<?>> register(@RequestBody RegisterRequest registerRequest) {
-        ApiResponse<?> response = authService.register(registerRequest);
+    public ResponseEntity<ApiResponse<?>> register(@RequestBody RegisterRequest request) {
+        log.info("Received request to register user with EMAIL: {}", request.email());
+        ApiResponse<?> response = authService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginRequest loginRequest) {
-        ApiResponse<?> response = authService.login(loginRequest);
+    public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginRequest request) {
+        log.info("Received request to log in user with EMAIL: {}", request.email());
+        ApiResponse<?> response = authService.login(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<?>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-        ApiResponse<?> response = authService.refreshToken(refreshTokenRequest);
+    public ResponseEntity<ApiResponse<?>> refreshToken(@RequestBody RefreshTokenRequest request) {
+        log.info("Received request to refresh user session token");
+        ApiResponse<?> response = authService.refreshToken(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/verify")
     public ResponseEntity<ApiResponse<?>> verifyToken(@RequestParam String token) {
+        log.info("Received request to verify account activation token");
         verificationService.activateUser(token);
         return new ResponseEntity<>(
                 ApiResponse.success("Account activated successfully.", null),
