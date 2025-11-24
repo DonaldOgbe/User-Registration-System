@@ -71,3 +71,4 @@ docker:
     - docker build --build-arg SPRING_PROFILES_ACTIVE=prod -t $IMAGE_SHA -t $IMAGE_LATEST .
     - docker push $IMAGE_SHA
     - docker push $IMAGE_LATEST
+
