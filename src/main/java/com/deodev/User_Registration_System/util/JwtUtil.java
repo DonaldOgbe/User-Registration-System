@@ -1,5 +1,6 @@
 package com.deodev.User_Registration_System.util;
 
+import com.deodev.User_Registration_System.config.CustomUserDetails;
 import com.deodev.User_Registration_System.exception.TokenValidationException;
 import com.deodev.User_Registration_System.model.User;
 import io.jsonwebtoken.*;
@@ -13,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 public class JwtUtil {
 
     private final JwtSecretUtil jwtSecretUtil;
+    private final UserDetailsService userDetailsService;
 
     public String generateAccessToken(String subject, Map<String, Object> extraClaims) {
         Date expiration = Date.from(Instant.now().plus(jwtSecretUtil.getExpiration().getAccess(), ChronoUnit.HOURS));
@@ -50,7 +53,6 @@ public class JwtUtil {
     }
 
     String createToken(Map<String, Object> extraClaims, String subject, Date expirationDate) {
-        extraClaims.put(("iat"), Instant.now());
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(subject)
@@ -62,7 +64,6 @@ public class JwtUtil {
 
     String createToken(String subject, Date expirationDate) {
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put(("iat"), Instant.now());
         return Jwts.builder()
                 .setSubject(subject)
                 .setIssuedAt(new Date())
@@ -82,13 +83,9 @@ public class JwtUtil {
     public Authentication getAuthenticationFromToken(String token) {
         try {
             final String username = getUsernameFromToken(token);
-            final List<String> authorities = getAuthoritiesFromToken(token);
+            final CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
 
-            List<GrantedAuthority> grantedAuthorities = authorities.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toUnmodifiableList());
-
-            return new UsernamePasswordAuthenticationToken(username, null, grantedAuthorities);
+            return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         } catch (SignatureException e) {
             throw new TokenValidationException("Invalid Token");
         }

@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -42,7 +42,7 @@ public class User {
     private UserStatus status;
 
     @Column(name = "password_updated_at")
-    private LocalDateTime passwordUpdatedAt;
+    private Date passwordUpdatedAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
