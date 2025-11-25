@@ -14,9 +14,7 @@ build:
   stage: build
   image: maven:3.9-eclipse-temurin-21-alpine
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "release")'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+    - if: '($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "main")'
       when: always
     - when: never
   cache:
@@ -36,9 +34,7 @@ test:
   stage: test
   image: maven:3.9-eclipse-temurin-21-alpine
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "release")'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+    - if: '($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "main")'
       when: always
     - when: never
   needs:
@@ -67,8 +63,8 @@ docker:
     - export TAG_SHA=${CI_COMMIT_SHA:0:8}
     - export IMAGE_SHA=${CI_REGISTRY_IMAGE}:prod-${TAG_SHA}
     - export IMAGE_LATEST=${CI_REGISTRY_IMAGE}:prod-latest
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build --build-arg SPRING_PROFILES_ACTIVE=prod -t $IMAGE_SHA -t $IMAGE_LATEST .
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build -t $IMAGE_SHA -t $IMAGE_LATEST .
     - docker push $IMAGE_SHA
     - docker push $IMAGE_LATEST
 
