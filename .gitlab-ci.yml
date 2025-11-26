@@ -67,3 +67,13 @@ docker:
     - docker build -t $IMAGE_SHA -t $IMAGE_LATEST .
     - docker push $IMAGE_SHA
     - docker push $IMAGE_LATEST
+
+deploy:
+  stage: deploy
+  image: curlimages/curl:latest
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - when: manual
+  script:
+    - echo "Triggering Render deployment..."
+    - curl -X POST "$RENDER_DEPLOY_HOOK"
