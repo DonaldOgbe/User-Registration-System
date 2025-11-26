@@ -73,7 +73,7 @@ deploy:
   image: curlimages/curl:latest
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-    - when: manual
+      when: manual
     - when: never
   script:
     - echo "Triggering Render deployment..."
