@@ -17,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -39,6 +38,11 @@ public class JwtFilter extends OncePerRequestFilter {
             @NotNull HttpServletRequest request,
             @NotNull HttpServletResponse response,
             @NotNull FilterChain filterChain) throws ServletException, IOException {
+
+        if (!request.getRequestURI().startsWith("/api")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String jwt = extractToken(request);
 
@@ -92,7 +96,7 @@ public class JwtFilter extends OncePerRequestFilter {
         Date passwordUpAt = userDetails.getPasswordUpdatedAt();
         Date iat = jwtUtil.getClaimFromToken(jwt, Claims::getIssuedAt);
 
-        if (iat.before(passwordUpAt)) {
+        if (passwordUpAt != null && iat.before(passwordUpAt)) {
             log.error("Token Expired, Error: Issued at [{}] is before Password update at [{}]", iat, passwordUpAt);
             throw new TokenValidationException(ACCESS_TOKEN_INVALID);
         }

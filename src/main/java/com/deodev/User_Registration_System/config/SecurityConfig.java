@@ -17,6 +17,7 @@ public class SecurityConfig {
 
     private final AuthenticationProvider authenticationProvider;
     private final JwtFilter jwtFilter;
+    private final Oauth2SuccessHandler oauth2SuccessHandler;
 
     private static final String[] WHITE_LIST = {
             "/api/v1/auth/**",
@@ -26,7 +27,8 @@ public class SecurityConfig {
             "/webjars/**",
             "/configuration/ui",
             "/configuration/security",
-            "/ping"
+            "/ping",
+            "/h2-console/**",
     };
 
     @Bean
@@ -37,12 +39,16 @@ public class SecurityConfig {
                         .requestMatchers(WHITE_LIST).permitAll()
                         .anyRequest().authenticated()
                 )
-                .authenticationProvider(authenticationProvider)
-                .sessionManagement(session -> {
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                .oauth2Login(oauth -> {
+                    oauth.successHandler(oauth2SuccessHandler);
                 })
+                .authenticationProvider(authenticationProvider)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
+
 }

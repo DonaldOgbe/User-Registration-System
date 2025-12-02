@@ -34,7 +34,10 @@ public class User {
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "provider_id")
+    private String oauthProviderId;
+
+    @Column(name = "password")
     private String password;
 
     @Enumerated(EnumType.STRING)

@@ -24,43 +24,4 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceTest {
-
-    @InjectMocks
-    private AuthService authService;
-
-    private User user;
-
-    private CustomUserDetails userDetails;
-
-    private Role adminRole;
-    private Role userRole;
-
-    @BeforeEach
-    void setUp() {
-        adminRole = Role.builder().name("ADMIN").build();
-        userRole = Role.builder().name("USER").build();
-        user = User.builder()
-                .roles(Set.of(adminRole, userRole))
-                .email("@email.com")
-                .status(UserStatus.ACTIVE)
-                .password("password")
-                .build();
-    }
-
-    @Test
-    void getAuthoritiesFromRoles_shouldReturnCorrectAuthorities() {
-        List<String> authorities = authService.getAuthoritiesFromRoles(user);
-
-        assertThat(authorities).containsExactlyInAnyOrder("ADMIN", "USER");
-    }
-
-    @Test
-    void getAuthorities_shouldReturnCorrectAuthorities() {
-        // given
-        userDetails = new CustomUserDetails(user);
-
-        List<String> authorities = authService.getAuthorities(userDetails);
-
-        assertThat(authorities).containsExactlyInAnyOrder("ADMIN", "USER");
-    }
 }

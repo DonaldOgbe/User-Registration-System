@@ -8,17 +8,16 @@ import com.deodev.User_Registration_System.dto.response.ApiResponse;
 import com.deodev.User_Registration_System.dto.response.UserDetailsResponse;
 import com.deodev.User_Registration_System.exception.InvalidPasswordException;
 import com.deodev.User_Registration_System.exception.ResourceNotFoundException;
-import com.deodev.User_Registration_System.model.Role;
 import com.deodev.User_Registration_System.model.User;
 import com.deodev.User_Registration_System.model.enums.UserStatus;
 import com.deodev.User_Registration_System.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -40,8 +39,20 @@ public class UserService {
                 .password(passwordEncoder.encode(registerRequest.password()))
                 .status(UserStatus.PENDING)
                 .roles(Set.of(roleService.getDefaultRole()))
-                .passwordUpdatedAt(new Date())
                 .build();
+        return userRepository.save(user);
+    }
+
+    public User createNewOauthUser(OidcUser oidcUser) {
+        User user = User.builder()
+                .firstname(oidcUser.getGivenName())
+                .lastname(oidcUser.getFamilyName())
+                .email(oidcUser.getEmail())
+                .oauthProviderId(oidcUser.getSubject())
+                .status(UserStatus.PENDING)
+                .roles(Set.of(roleService.getDefaultRole()))
+                .build();
+        log.info("Creating new Oauth2 user, email: {}", oidcUser.getEmail());
         return userRepository.save(user);
     }
 
@@ -52,6 +63,15 @@ public class UserService {
     public User findUserById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
+    }
+
+    public User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
+    }
+
+    public Boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
 
     public ApiResponse<?> getUser(UUID userId) {
